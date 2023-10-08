@@ -1,0 +1,17 @@
+
+extends:
+  - recommended
+
+apis:
+  core@v2:
+    root: ./docs/openapi/openapi.yaml
+    rules:
+      no-ambiguous-paths: error
+
+theme:
+  openapi:
+    schemaExpansionLevel: 2
+    generateCodeSamples:
+      languages:
+        - lang: curl
+        - lang: Python
