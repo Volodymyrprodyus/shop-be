@@ -1,14 +1,22 @@
-import { APIGatewayProxyResult } from 'aws-lambda';
-import { productsMock } from '../../mock-data/products';
-import { middyfy } from '@libs/lambda';
+import { middyfy } from '../../libs/lambda';
+import { ProductTable, StockTable } from '../../dynamo-db';
 
-export const getProductsList = async (): Promise<APIGatewayProxyResult> => {
-    await Promise.resolve(1);
+const _getProductsList = async () => {
+    const [products, stocks] = await Promise.all([
+        ProductTable.read(),
+        StockTable.read(),
+    ]);
 
-    return {
-        statusCode: 200,
-        body: JSON.stringify(productsMock),
-    };
+    const mergedProductData = (products?.items || []).map((product) => ({
+        ...product,
+        count:
+            stocks?.items?.find(({ productId }) => productId === product.id)
+                ?.count || 0,
+    }));
+
+    return mergedProductData.length
+        ? { statusCode: 200, body: JSON.stringify(mergedProductData) }
+        : null;
 };
 
-export const main = middyfy(getProductsList);
+export const main = middyfy(_getProductsList);
