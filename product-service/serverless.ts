@@ -1,7 +1,6 @@
 import type { AWS } from '@serverless/typescript';
 
-import { getProductsList } from './src/functions';
-import { getProductById } from './src/functions';
+import { getProductsList, getProductById, createProduct } from './src/functions';
 
 const serverlessConfiguration: AWS = {
     service: 'product-service',
@@ -20,59 +19,33 @@ const serverlessConfiguration: AWS = {
         environment: {
             AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
             NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
-            PRODUCTS_TABLE_NAME: 'DynamoDBProducts',
-            STOCKS_TABLE_NAME: 'DynamoDBStocks',
+            PRODUCTS_TABLE_NAME: 'products',
+            STOCKS_TABLE_NAME: 'stocks',
         },
         iam: {
-            role: 'DynamoDBPolicy',
+            role: {
+                statements: [
+                    {
+                        Effect: 'Allow',
+                        Action: [
+                            'dynamodb:Query',
+                            'dynamodb:Scan',
+                            'dynamodb:GetItem',
+                            'dynamodb:PutItem',
+                            'dynamodb:UpdateItem',
+                            'dynamodb:DeleteItem',
+                        ],
+                        Resource:
+                            'arn:aws:dynamodb:${self:provider.region}:*:table/*',
+                    },
+                ],
+            },
         },
     },
-    // import the function via paths
-    functions: { getProductsList, getProductById },
+    functions: { getProductsList, getProductById, createProduct },
     resources: {
         Resources: {
-            DynamoDBPolicy: {
-                Type: 'AWS::IAM::Role',
-                Properties: {
-                    RoleName: 'DynamoDBLambdasAccessRole',
-                    AssumeRolePolicyDocument: {
-                        Version: '2012-10-17',
-                        Statement: [
-                            {
-                                Effect: 'Allow',
-                                Principal: {
-                                    Service: ['lambda.amazonaws.com'],
-                                },
-                                Action: 'sts:AssumeRole',
-                            },
-                        ],
-                    },
-                    Policies: [
-                        {
-                            PolicyName: 'DynamoDBLambdasAccessPolicy',
-                            PolicyDocument: {
-                                Version: '2012-10-17',
-                                Statement: [
-                                    {
-                                        Effect: 'Allow',
-                                        Action: [
-                                            'dynamodb:*',
-                                            'dynamodb:Scan',
-                                            'dynamodb:GetItem',
-                                            'dynamodb:PutItem',
-                                            'dynamodb:UpdateItem',
-                                            'dynamodb:DeleteItem',
-                                        ],
-                                        Resource:
-                                            'arn:aws:dynamodb:${self:provider.region}:*:table/*',
-                                    },
-                                ],
-                            },
-                        },
-                    ],
-                },
-            },
-            DynamoDBProducts: {
+            products: {
                 Type: 'AWS::DynamoDB::Table',
                 DeletionPolicy: 'Retain',
                 Properties: {
@@ -95,7 +68,7 @@ const serverlessConfiguration: AWS = {
                     },
                 },
             },
-            DynamoDBStocks: {
+            stocks: {
                 Type: 'AWS::DynamoDB::Table',
                 DeletionPolicy: 'Retain',
                 Properties: {
@@ -136,6 +109,3 @@ const serverlessConfiguration: AWS = {
 };
 
 module.exports = serverlessConfiguration;
-
-// export const serverlessConfig = { ...serverlessConfiguration };
-

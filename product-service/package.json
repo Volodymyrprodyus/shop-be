@@ -9,7 +9,6 @@
     "docs": "redoc-cli serve docs/openapi/openapi.yml",
     "docs:build": "redocly build-docs --output=./docs/openapi/openapi.html",
     "docs:preview": "redocly preview-docs -p 8888",
-    "ts-to-yaml-convert": "npx ts-node ts-to-yaml.ts",
     "fill-tables": "npm run fill-table:products && npm run fill-table:stocks",
     "fill-table:products": "aws dynamodb --profile default batch-write-item --request-items file://tables-data/products.json",
     "fill-table:stocks": "aws dynamodb --profile default batch-write-item --request-items file://tables-data/stocks.json"

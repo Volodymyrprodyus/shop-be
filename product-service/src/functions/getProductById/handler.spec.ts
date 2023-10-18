@@ -1,7 +1,7 @@
 import { getByIdMockEvent } from '../../mock-data/events';
 import { productsMock } from '../../mock-data/products';
-import { getProductById as handler } from './handler';
-import { Product } from '../../models/product.model';
+import { _getProductById as handler } from './handler';
+import { IProduct } from '../../models/product.model';
 
 describe('getProductById Handler', () => {
     it('returns statusCode 200', async () => {
@@ -19,8 +19,8 @@ describe('getProductById Handler', () => {
 
     it('returns product in response', async () => {
         const productId: string = 'BookTop';
-        const product: Product = productsMock.find(
-            (productItem: Product) => productItem.title === productId
+        const product: IProduct = productsMock.find(
+            (productItem: IProduct) => productItem.title === productId
         );
         const response = await handler(getByIdMockEvent);
 

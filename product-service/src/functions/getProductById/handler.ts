@@ -3,7 +3,7 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 import { ProductWithStockTable } from '../../dynamo-db';
 import { productIdValidationSchema } from '../../validation-schemas';
 
-const _getProductById = async (
+export const _getProductById = async (
     event: APIGatewayProxyEvent
 ) => {
     let statusCode: number;

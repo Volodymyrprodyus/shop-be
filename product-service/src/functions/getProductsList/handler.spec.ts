@@ -1,5 +1,5 @@
 import { productsMock } from '../../mock-data/products';
-import { getProductsList as handler } from './handler';
+import { _getProductsList as handler } from './handler';
 
 describe('getProductsList Handler', () => {
     it('returns statusCode 200', async () => {

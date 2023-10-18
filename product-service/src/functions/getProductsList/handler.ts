@@ -1,7 +1,7 @@
 import { middyfy } from '../../libs/lambda';
 import { ProductTable, StockTable } from '../../dynamo-db';
 
-const _getProductsList = async () => {
+export const _getProductsList = async () => {
     const [products, stocks] = await Promise.all([
         ProductTable.read(),
         StockTable.read(),
