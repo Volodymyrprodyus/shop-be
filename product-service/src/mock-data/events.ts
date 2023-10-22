@@ -45,7 +45,7 @@ export const getByIdMockEvent: APIGatewayProxyEvent = {
     },
     queryStringParameters: null,
     multiValueQueryStringParameters: null,
-    pathParameters: { productId: 'BookTop' },
+    pathParameters: { id: '7567ec4b-b10c-48c5-9345-fc73c48a80a2' },
     stageVariables: null,
     requestContext: {
         authorizer: null,

@@ -1,4 +1,4 @@
-import { middyfy } from '../../libs/lambda';
+import { getLambdaHandler } from '../../libs/lambda';
 import { ProductTable, StockTable } from '../../dynamo-db';
 
 export const _getProductsList = async () => {
@@ -15,8 +15,8 @@ export const _getProductsList = async () => {
     }));
 
     return mergedProductData.length
-        ? { statusCode: 200, body: JSON.stringify(mergedProductData) }
+        ? { statusCode: 200, data: mergedProductData }
         : null;
 };
 
-export const main = middyfy(_getProductsList);
+export const main = getLambdaHandler(_getProductsList);
