@@ -22,6 +22,22 @@ const serverlessConfiguration: AWS = {
         environment: {
             BUCKET_NAME: 'shop-import-service-bucket',
             REGION: 'us-east-1',
+            SQS_URL: {
+                'Fn::Join': [
+                    '',
+                    [
+                        'https://sqs.',
+                        {
+                            Ref: 'AWS::Region',
+                        },
+                        '.amazonaws.com/',
+                        {
+                            Ref: 'AWS::AccountId',
+                        },
+                        '/${self:custom.SQSName}',
+                    ],
+                ],
+            },
         },
     },
     // import the function via paths
@@ -46,6 +62,7 @@ const serverlessConfiguration: AWS = {
                     },
                     ManagedPolicyArns: [
                         'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+                        'arn:aws:iam::aws:policy/AmazonSQSFullAccess',
                     ],
                     Policies: [
                         {
@@ -76,6 +93,7 @@ const serverlessConfiguration: AWS = {
     package: { individually: true },
     custom: {
         bucketName: 'shop-import-service-bucket',
+        SQSName: 'catalogItemsQueue',
         esbuild: {
             bundle: true,
             minify: false,

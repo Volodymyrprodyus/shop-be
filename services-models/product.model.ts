@@ -9,7 +9,7 @@ export interface IProduct {
 
 export type IProductList = IProduct[];
 export type IProductWithStock = IProduct & Omit<IStock, 'productId'>;
-export type IProductWithStockList = IProductWithStock[];
+export type IProductWithStockList = Array<IProductWithStock>;
 
 export type ICreateProductRequest = {
     title: string;

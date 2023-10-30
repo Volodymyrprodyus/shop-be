@@ -1,14 +1,18 @@
 import type { AWS } from '@serverless/typescript';
 
-import { getProductsList, getProductById, createProduct } from './src/functions';
+import { getProductsList, getProductById, createProduct, catalogBatchProcess } from './src/functions';
 
 const serverlessConfiguration: AWS = {
     service: 'product-service',
     frameworkVersion: '3',
-    plugins: ['serverless-esbuild'],
+    plugins: [
+        'serverless-auto-swagger',
+        'serverless-esbuild',
+        'serverless-offline',
+    ],
     provider: {
         name: 'aws',
-        runtime: 'nodejs14.x',
+        runtime: 'nodejs18.x',
         profile: 'default',
         region: 'us-east-1',
         stage: 'dev',
@@ -21,30 +25,69 @@ const serverlessConfiguration: AWS = {
             NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
             PRODUCTS_TABLE_NAME: 'products',
             STOCKS_TABLE_NAME: 'stocks',
-        },
-        iam: {
-            role: {
-                statements: [
-                    {
-                        Effect: 'Allow',
-                        Action: [
-                            'dynamodb:Query',
-                            'dynamodb:Scan',
-                            'dynamodb:GetItem',
-                            'dynamodb:PutItem',
-                            'dynamodb:UpdateItem',
-                            'dynamodb:DeleteItem',
-                        ],
-                        Resource:
-                            'arn:aws:dynamodb:${self:provider.region}:*:table/*',
-                    },
-                ],
+            REGION: 'us-east-1',
+            SNS_TOPIC: {
+                Ref: 'SNSCreateProductTopic',
             },
         },
+        iam: {
+            role: 'DynamoDBPolicy',
+        },
     },
-    functions: { getProductsList, getProductById, createProduct },
+    functions: {
+        getProductsList,
+        getProductById,
+        createProduct,
+        catalogBatchProcess,
+    },
     resources: {
         Resources: {
+            DynamoDBPolicy: {
+                Type: 'AWS::IAM::Role',
+                Properties: {
+                    RoleName: 'DynamoDBLambdasAccessRole',
+                    AssumeRolePolicyDocument: {
+                        Version: '2012-10-17',
+                        Statement: [
+                            {
+                                Effect: 'Allow',
+                                Principal: {
+                                    Service: ['lambda.amazonaws.com'],
+                                },
+                                Action: 'sts:AssumeRole',
+                            },
+                        ],
+                    },
+                    ManagedPolicyArns: [
+                        'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+                        'arn:aws:iam::aws:policy/AmazonSQSFullAccess',
+                        'arn:aws:iam::aws:policy/AmazonSNSFullAccess',
+                    ],
+                    Policies: [
+                        {
+                            PolicyName: 'DynamoDBLambdasAccessPolicy',
+                            PolicyDocument: {
+                                Version: '2012-10-17',
+                                Statement: [
+                                    {
+                                        Effect: 'Allow',
+                                        Action: [
+                                            'dynamodb:Query',
+                                            'dynamodb:Scan',
+                                            'dynamodb:GetItem',
+                                            'dynamodb:PutItem',
+                                            'dynamodb:UpdateItem',
+                                            'dynamodb:DeleteItem',
+                                        ],
+                                        Resource:
+                                            'arn:aws:dynamodb:${self:provider.region}:*:table/*',
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                },
+            },
             products: {
                 Type: 'AWS::DynamoDB::Table',
                 DeletionPolicy: 'Retain',
@@ -91,10 +134,56 @@ const serverlessConfiguration: AWS = {
                     },
                 },
             },
+            catalogItemsQueue: {
+                Type: 'AWS::SQS::Queue',
+                Properties: {
+                    QueueName: 'catalogItemsQueue',
+                },
+            },
+            SNSCreateProductTopic: {
+                Type: 'AWS::SNS::Topic',
+                Properties: {
+                    TopicName: 'createProductTopic',
+                },
+            },
+            SNSCreateProductSuccessSubscription: {
+                Type: 'AWS::SNS::Subscription',
+                Properties: {
+                    Protocol: 'email',
+                    Endpoint: 'create_products_sub@gmail.com',
+                    TopicArn: {
+                        Ref: 'SNSCreateProductTopic',
+                    },
+                    FilterPolicy: {
+                        status: ['success'],
+                    },
+                },
+            },
+            SNSCreateProductErrorSubscription: {
+                Type: 'AWS::SNS::Subscription',
+                Properties: {
+                    Protocol: 'email',
+                    Endpoint: 'create_products_sub@gmail.com',
+                    TopicArn: {
+                        Ref: 'SNSCreateProductTopic',
+                    },
+                    FilterPolicy: {
+                        status: ['error'],
+                    },
+                },
+            },
         },
     },
     package: { individually: true },
     custom: {
+        autoswagger: {
+            apiType: 'http',
+            basePath: '/dev',
+            typefiles: [
+                './src/models/product.model.ts',
+                './src/models/stock.model.ts',
+            ],
+        },
         esbuild: {
             bundle: true,
             minify: false,
