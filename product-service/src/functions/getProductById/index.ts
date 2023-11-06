@@ -6,12 +6,12 @@ export default {
         {
             http: {
                 method: 'get',
-                path: 'products/{productId}',
+                path: '/products/{id}',
                 cors: true,
                 request: {
                     parameters: {
                         paths: {
-                            productId: true,
+                            id: true,
                         },
                     },
                 },

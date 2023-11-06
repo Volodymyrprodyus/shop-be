@@ -1,7 +1,6 @@
 import type { AWS } from '@serverless/typescript';
 
-import { getProductsList } from './src/functions';
-import { getProductById } from './src/functions';
+import { getProductsList, getProductById, createProduct } from './src/functions';
 
 const serverlessConfiguration: AWS = {
     service: 'product-service',
@@ -10,6 +9,7 @@ const serverlessConfiguration: AWS = {
     provider: {
         name: 'aws',
         runtime: 'nodejs14.x',
+        profile: 'default',
         region: 'us-east-1',
         stage: 'dev',
         apiGateway: {
@@ -19,10 +19,80 @@ const serverlessConfiguration: AWS = {
         environment: {
             AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
             NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
+            PRODUCTS_TABLE_NAME: 'products',
+            STOCKS_TABLE_NAME: 'stocks',
+        },
+        iam: {
+            role: {
+                statements: [
+                    {
+                        Effect: 'Allow',
+                        Action: [
+                            'dynamodb:Query',
+                            'dynamodb:Scan',
+                            'dynamodb:GetItem',
+                            'dynamodb:PutItem',
+                            'dynamodb:UpdateItem',
+                            'dynamodb:DeleteItem',
+                        ],
+                        Resource:
+                            'arn:aws:dynamodb:${self:provider.region}:*:table/*',
+                    },
+                ],
+            },
         },
     },
-    // import the function via paths
-    functions: { getProductsList, getProductById },
+    functions: { getProductsList, getProductById, createProduct },
+    resources: {
+        Resources: {
+            products: {
+                Type: 'AWS::DynamoDB::Table',
+                DeletionPolicy: 'Retain',
+                Properties: {
+                    TableName: 'products',
+                    AttributeDefinitions: [
+                        {
+                            AttributeName: 'id',
+                            AttributeType: 'S',
+                        },
+                    ],
+                    KeySchema: [
+                        {
+                            AttributeName: 'id',
+                            KeyType: 'HASH',
+                        },
+                    ],
+                    ProvisionedThroughput: {
+                        ReadCapacityUnits: 1,
+                        WriteCapacityUnits: 1,
+                    },
+                },
+            },
+            stocks: {
+                Type: 'AWS::DynamoDB::Table',
+                DeletionPolicy: 'Retain',
+                Properties: {
+                    TableName: 'stocks',
+                    AttributeDefinitions: [
+                        {
+                            AttributeName: 'product_id',
+                            AttributeType: 'S',
+                        },
+                    ],
+                    KeySchema: [
+                        {
+                            AttributeName: 'product_id',
+                            KeyType: 'HASH',
+                        },
+                    ],
+                    ProvisionedThroughput: {
+                        ReadCapacityUnits: 1,
+                        WriteCapacityUnits: 1,
+                    },
+                },
+            },
+        },
+    },
     package: { individually: true },
     custom: {
         esbuild: {
@@ -39,6 +109,3 @@ const serverlessConfiguration: AWS = {
 };
 
 module.exports = serverlessConfiguration;
-
-// export const serverlessConfig = { ...serverlessConfiguration };
-

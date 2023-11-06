@@ -1,25 +1,17 @@
-import { middyfy } from '@libs/lambda';
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { productsMock } from '../../mock-data/products';
-import { Product } from '../../models/product.model';
+import { getLambdaHandler, validateSchema } from '../../libs/lambda';
+import { APIGatewayProxyEvent } from 'aws-lambda';
+import { ProductWithStockTable } from '../../dynamo-db';
+import { productIdValidationSchema } from '../../validation-schemas';
 
-
-export const getProductById = async (
+export const _getProductById = async (
     event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
-    let statusCode: number;
-    await Promise.resolve(1);
+) => {
+    const productId = event.pathParameters?.id || '';
 
-    const title = event.pathParameters.productId;
-    const product: Product = productsMock.find(
-        (productItem: Product) => productItem.title === title
-    );
-    statusCode = Boolean(product) ? 200 : 404;
+    validateSchema(400, productIdValidationSchema, { productId });
+    const product = await ProductWithStockTable.read(productId);
 
-    return {
-        statusCode: statusCode,
-        body: Boolean(product) ? JSON.stringify(product) : 'Item not found',
-    };
+    return product ? { statusCode: 200, data: product } : null;;
 };
 
-export const main = middyfy(getProductById);
+export const main = getLambdaHandler(_getProductById);
