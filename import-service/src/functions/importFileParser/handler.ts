@@ -1,33 +1,93 @@
 import { ReadableStream } from 'stream/web';
-import { S3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { S3Event } from 'aws-lambda';
 import { parseCSVFile } from '../../libs/parseCSVFile';
 import { lambdaHandler } from '../../libs/lambda';
+import { IProductWithStockList } from '../../../../services-models';
+import { SQS_URL } from '../../constants';
+import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
-const _importFileParser = async (event: S3Event) => {
-  const region = event.Records[0]?.awsRegion;
-  const bucketName = event.Records[0]?.s3.bucket.name;
-  const fileKey = event.Records[0]?.s3.object.key;
+const importFileParser = async (event: S3Event) => {
+    const region: string = event.Records[0]?.awsRegion;
+    const bucketName: string = event.Records[0]?.s3.bucket.name;
+    const fileKey: string = event.Records[0]?.s3.object.key;
+    
+    const webStream = (
+        await getS3Object(region, bucketName, fileKey)
+    ).Body?.transformToWebStream();
+    const products = (await parseCSVFile(
+        webStream as ReadableStream
+    )) as IProductWithStockList;
 
-  const client = new S3Client({ region: region });
-  const getCommand = new GetObjectCommand({ Bucket: bucketName, Key: fileKey });
-  const webStream = (await client.send(getCommand)).Body?.transformToWebStream();
-  const parseData = await parseCSVFile(webStream as ReadableStream);
+    await moveS3Object(
+        region,
+        bucketName,
+        fileKey,
+        `parsed/${fileKey?.split('/')[1]}`
+    );
+    await deleteS3Object(region, bucketName, fileKey);
 
-  console.log('parsed data: ', parseData);
+    for await (const product of products) {
+        await sqsSendMessage(SQS_URL, JSON.stringify(product));
+    }
 
-  const copyCommand = new CopyObjectCommand({
-    Bucket: bucketName,
-    CopySource: `${bucketName}/${fileKey}`,
-    Key: `parsed/${fileKey?.split('/')[1]}`,
-  });
-
-  const deleteCommand = new DeleteObjectCommand({ Bucket: bucketName, Key: fileKey });
-
-  await client.send(copyCommand);
-  await client.send(deleteCommand);
-
-  return { statusCode: 200, data: null };
+    return { statusCode: 200, data: null };
 };
 
-export const main = lambdaHandler(_importFileParser);
+const getS3Object = async (
+    region: string,
+    bucketName: string,
+    fileKey: string
+) => {
+    const s3Client = new S3Client({ region });
+
+    return await s3Client.send(
+        new GetObjectCommand({ Bucket: bucketName, Key: fileKey })
+    );
+};
+
+const moveS3Object = async (
+    region: string,
+    bucketName: string,
+    fileKey: string,
+    newPath: string
+) => {
+    const s3Client = new S3Client({ region });
+
+    await s3Client.send(
+        new CopyObjectCommand({
+            Bucket: bucketName,
+            CopySource: `${bucketName}/${fileKey}`,
+            Key: newPath,
+        })
+    );
+};
+
+const deleteS3Object = async (
+    region: string,
+    bucketName: string,
+    fileKey: string
+) => {
+    const s3Client = new S3Client({ region });
+
+    await s3Client.send(
+        new DeleteObjectCommand({ Bucket: bucketName, Key: fileKey })
+    );
+};
+
+const sqsClient = new SQSClient({});
+const sqsSendMessage = async (sqsUrl: string, message: string, delay = 5) => {
+    try {
+        await sqsClient.send(
+            new SendMessageCommand({
+                QueueUrl: sqsUrl,
+                MessageBody: message,
+                DelaySeconds: delay,
+            })
+        );
+    } catch (error) {
+        console.log(`SQS sending message error: ${error}`);
+    }
+};
+
+export const main = lambdaHandler(importFileParser);

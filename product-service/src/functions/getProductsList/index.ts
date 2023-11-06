@@ -8,6 +8,14 @@ export default {
                 method: 'get',
                 path: '/products',
                 cors: true,
+                responses: {
+                    200: {
+                        bodyType: 'IProductWithStockList',
+                    },
+                    404: {
+                        description: 'Product not found',
+                    },
+                },
             },
         },
     ],

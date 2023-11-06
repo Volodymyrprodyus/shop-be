@@ -44,6 +44,18 @@ export const validateSchema = (
     }
 };
 
+export const simpleValidateSchema = (
+    schema: ObjectSchema<Record<string, unknown>>,
+    obj: Record<string, unknown>
+) => {
+    try {
+        schema.validateSync(obj, { abortEarly: false });
+        return true;
+    } catch (error) {
+        return false;
+    }
+};
+
 export const getLambdaHandler =
     (
         handler: (
@@ -68,6 +80,35 @@ export const getLambdaHandler =
                 data: unknown;
             };
 
+            return parseResponse(statusCode, data);
+        }
+        };
+    
+export const getBatchLambdaHandler =
+    (
+        handler: (
+            event: any
+        ) => Promise<{ statusCode: number; data: unknown } | null>
+    ) =>
+    async (event: unknown) => {
+        console.log('new event: ', JSON.stringify(event, null, 2));
+
+        try {
+            const res = await handler(event);
+
+            return res
+                ? parseResponse(res.statusCode, res.data)
+                : parseResponse(404, { message: 'Not found' });
+        } catch (error) {
+            const {
+                statusCode = 500,
+                data = { message: 'Internal server error' },
+            } = error as {
+                statusCode: number;
+                data: unknown;
+            };
+
+            console.log('error: ', error);
             return parseResponse(statusCode, data);
         }
     };
