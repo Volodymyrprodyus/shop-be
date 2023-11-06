@@ -23,8 +23,12 @@ const serverlessConfiguration: AWS = {
         environment: {
             AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
             NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
-            PRODUCTS_TABLE_NAME: 'products',
-            STOCKS_TABLE_NAME: 'stocks',
+            PRODUCTS_TABLE_NAME: {
+                Ref: 'products',
+            },
+            STOCKS_TABLE_NAME: {
+                Ref: 'stocks',
+            },
             REGION: 'us-east-1',
             SNS_TOPIC: {
                 Ref: 'SNSCreateProductTopic',
