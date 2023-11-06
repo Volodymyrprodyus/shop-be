@@ -1,0 +1,55 @@
+service: product-service
+frameworkVersion: "3"
+plugins: &a1
+  - serverless-esbuild
+provider: &a2
+  name: aws
+  runtime: nodejs14.x
+  region: us-east-1
+  stage: dev
+  apiGateway:
+    minimumCompressionSize: 1024
+    shouldStartNameWithService: true
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+    NODE_OPTIONS: --enable-source-maps --stack-trace-limit=1000
+functions: &a3
+  getProductsList:
+    handler: src/functions/getProductsList/handler.main
+    events:
+      - http:
+          method: get
+          path: products
+          cors: true
+  getProductById:
+    handler: src/functions/getProductById/handler.main
+    events:
+      - http:
+          method: get
+          path: roducts/{productId}
+          cors: true
+          request:
+            parameters:
+              paths:
+                productId: true
+package: &a4
+  individually: true
+custom: &a5
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude:
+      - aws-sdk
+    target: node14
+    define: {}
+    platform: node
+    concurrency: 10
+default:
+  service: product-service
+  frameworkVersion: "3"
+  plugins: *a1
+  provider: *a2
+  functions: *a3
+  package: *a4
+  custom: *a5

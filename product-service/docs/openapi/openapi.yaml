@@ -1,0 +1,100 @@
+openapi: "3.0.1"
+info:
+  title: "product-service-dev"
+  version: "2023-10-07T13:31:24Z"
+servers:
+- url: "https://2h2ao54mgg.execute-api.us-east-1.amazonaws.com/{basePath}"
+  variables:
+    basePath:
+      default: "dev"
+paths:
+  /roducts/{productId}:
+    get:
+      parameters:
+      - name: "productId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-request-validator: "product-service-dev | Validate request\
+        \ body and querystring parameters"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:936757117153:function:product-service-dev-getProductById/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      parameters:
+      - name: "productId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{statusCode:200}"
+        passthroughBehavior: "when_no_match"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "mock"
+  /products:
+    get:
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:936757117153:function:product-service-dev-getProductsList/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{statusCode:200}"
+        passthroughBehavior: "when_no_match"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "mock"
+components: {}
+x-amazon-apigateway-request-validators:
+  product-service-dev | Validate request body and querystring parameters:
+    validateRequestParameters: true
+    validateRequestBody: true
+x-amazon-apigateway-minimum-compression-size: 1024
