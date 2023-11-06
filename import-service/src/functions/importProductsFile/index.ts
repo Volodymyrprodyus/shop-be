@@ -6,14 +6,13 @@ export default {
         {
             http: {
                 method: 'get',
-                path: '/products',
+                path: '/import',
                 cors: true,
-                responses: {
-                    200: {
-                        bodyType: 'IProductWithStockList',
-                    },
-                    404: {
-                        description: 'Product not found',
+                request: {
+                    parameters: {
+                        querystrings: {
+                            name: true,
+                        },
                     },
                 },
             },

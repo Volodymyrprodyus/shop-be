@@ -1,12 +1,5 @@
-import middy from "@middy/core"
-import middyJsonBodyParser from "@middy/http-json-body-parser"
-import cors from '@middy/http-cors';
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { ObjectSchema, ValidationError } from "yup";
-
-export const middyfy = (handler) => {
-    return middy(handler).use(cors()).use(middyJsonBodyParser());
-};
+import { APIGatewayProxyResult } from 'aws-lambda';
+import { ObjectSchema, ValidationError } from 'yup';
 
 export const parseResponse = (
     statusCode: number,
@@ -44,47 +37,7 @@ export const validateSchema = (
     }
 };
 
-export const simpleValidateSchema = (
-    schema: ObjectSchema<Record<string, unknown>>,
-    obj: Record<string, unknown>
-) => {
-    try {
-        schema.validateSync(obj, { abortEarly: false });
-        return true;
-    } catch (error) {
-        return false;
-    }
-};
-
-export const getLambdaHandler =
-    (
-        handler: (
-            event: APIGatewayProxyEvent
-        ) => Promise<{ statusCode: number; data: unknown } | null>
-    ) =>
-    async (event: APIGatewayProxyEvent) => {
-        console.log('new event: ', JSON.stringify(event, null, 2));
-
-        try {
-            const res = await handler(event);
-
-            return res
-                ? parseResponse(res.statusCode, res.data)
-                : parseResponse(404, { message: 'Not found' });
-        } catch (error) {
-            const {
-                statusCode = 500,
-                data = { message: 'Internal server error' },
-            } = error as {
-                statusCode: number;
-                data: unknown;
-            };
-
-            return parseResponse(statusCode, data);
-        }
-        };
-    
-export const getBatchLambdaHandler =
+export const lambdaHandler =
     (
         handler: (
             event: any
