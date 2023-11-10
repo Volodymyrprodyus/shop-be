@@ -1,6 +1,6 @@
 import type { AWS } from '@serverless/typescript';
 
-import { importFileParser, importProductsFile, importProductsFilePrivate } from './src/functions';
+import { importFileParser, importProductsFile } from './src/functions';
 
 const serverlessConfiguration: AWS = {
     service: 'import-service',
@@ -43,7 +43,6 @@ const serverlessConfiguration: AWS = {
     // import the function via paths
     functions: {
         importProductsFile,
-        importProductsFilePrivate,
         importFileParser,
     },
     resources: {
@@ -90,6 +89,21 @@ const serverlessConfiguration: AWS = {
                             },
                         },
                     ],
+                },
+            },
+            GatewayErrorResponse: {
+                Type: 'AWS::ApiGateway::GatewayResponse',
+                Properties: {
+                    ResponseParameters: {
+                        'gatewayresponse.header.Access-Control-Request-Headers':
+                            "'Authorization'",
+                        'gatewayresponse.header.Access-Control-Allow-Origin':
+                            "'*'",
+                    },
+                    ResponseType: 'DEFAULT_4XX',
+                    RestApiId: {
+                        Ref: 'ApiGatewayRestApi',
+                    },
                 },
             },
         },
