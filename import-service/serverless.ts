@@ -41,7 +41,10 @@ const serverlessConfiguration: AWS = {
         },
     },
     // import the function via paths
-    functions: { importProductsFile, importFileParser },
+    functions: {
+        importProductsFile,
+        importFileParser,
+    },
     resources: {
         Resources: {
             ImportServiceRole: {
@@ -88,6 +91,21 @@ const serverlessConfiguration: AWS = {
                     ],
                 },
             },
+            GatewayErrorResponse: {
+                Type: 'AWS::ApiGateway::GatewayResponse',
+                Properties: {
+                    ResponseParameters: {
+                        'gatewayresponse.header.Access-Control-Request-Headers':
+                            "'Authorization'",
+                        'gatewayresponse.header.Access-Control-Allow-Origin':
+                            "'*'",
+                    },
+                    ResponseType: 'DEFAULT_4XX',
+                    RestApiId: {
+                        Ref: 'ApiGatewayRestApi',
+                    },
+                },
+            },
         },
     },
     package: { individually: true },
@@ -103,6 +121,13 @@ const serverlessConfiguration: AWS = {
             define: { 'require.resolve': undefined },
             platform: 'node',
             concurrency: 10,
+        },
+        authorizers: {
+            basicAuthorizer: {
+                name: 'basicAuthorizer',
+                arn: 'arn:aws:lambda:${aws:region}:${aws:accountId}:function:authorization-service-dev-basicAuthorizer',
+                type: 'token',
+            },
         },
     },
 };
